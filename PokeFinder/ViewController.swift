@@ -45,7 +45,7 @@ class ViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDele
     
     func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         
-        if status == CLAuthorizationStatus.authorizedWhenInUse {
+        if status == .authorizedWhenInUse {
             mapView.showsUserLocation = true
         }
     }
@@ -57,6 +57,7 @@ class ViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDele
     }
     
     func mapView(_ mapView: MKMapView, didUpdate userLocation: MKUserLocation) {
+        
         if let loc = userLocation.location {
             if !mapHasCenteredOnce {
                 centerMapOnLocation(location: loc)
@@ -67,30 +68,50 @@ class ViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDele
     
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
         
+        let annoIdentifier = "Pokemon"
         var annotationView: MKAnnotationView?
         
         if annotation.isKind(of: MKUserLocation.self) {
             annotationView = MKAnnotationView(annotation: annotation, reuseIdentifier: "User")
             annotationView?.image = UIImage(named: "ash")
+        } else if let deqAnno = mapView.dequeueReusableAnnotationView(withIdentifier: annoIdentifier) {
+            annotationView = deqAnno
+            annotationView?.annotation = annotation
+        } else {
+            let av = MKAnnotationView(annotation: annotation, reuseIdentifier: annoIdentifier)
+            av.rightCalloutAccessoryView = UIButton(type: .detailDisclosure)
+            annotationView = av
+        }
+        
+        if let annotationView = annotationView, let anno = annotation as? PokeAnnotation {
+            
+            annotationView.canShowCallout = true
+            annotationView.image = UIImage(named: "\(anno.pokemonNumber)")
+            let btn = UIButton()
+            btn.frame = CGRect(x: 0, y: 0, width: 30, height: 30)
+            btn.setImage(UIImage(named: "map"), for: .normal)
+            annotationView.rightCalloutAccessoryView = btn
         }
         
         return annotationView
+        
     }
     
     func createSighting(forLocation location: CLLocation, withPokemon pokeId: Int) {
+        
         geoFire.setLocation(location, forKey: "\(pokeId)")
     }
     
     func showSightingsOnMap(location: CLLocation) {
         let circleQuery = geoFire!.query(at: location, withRadius: 2.5)
         
-        _ = circleQuery?.observe(GFEventType.keyEntered) { (key, location) in
+        _ = circleQuery?.observe(GFEventType.keyEntered, with: { (key, location) in
             
             if let key = key, let location = location {
                 let anno = PokeAnnotation(coordinate: location.coordinate, pokemonNumber: Int(key)!)
                 self.mapView.addAnnotation(anno)
             }
-        }
+        })
     }
     
     func mapView(_ mapView: MKMapView, regionWillChangeAnimated animated: Bool) {
