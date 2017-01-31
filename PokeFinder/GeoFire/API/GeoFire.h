@@ -107,6 +107,7 @@ withCompletionBlock:(GFCompletionBlock)block;
  * @param callback The callback that is called for the current location
  * @return
  */
+
 - (void)getLocationForKey:(NSString *)key
              withCallback:(GFCallbackBlock)callback;
 

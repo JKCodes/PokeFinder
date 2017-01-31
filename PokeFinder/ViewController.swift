@@ -18,6 +18,7 @@ class ViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDele
     var mapHasCenteredOnce = false
     var geoFire: GeoFire!
     var geoFireRef: FIRDatabaseReference!
+    var pokemonSelected = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -28,10 +29,15 @@ class ViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDele
         geoFireRef = FIRDatabase.database().reference()
         geoFire = GeoFire(firebaseRef: geoFireRef)
         
-        
+        MasterSelection.sharedInstance.pokemonId = 1
     }
 
     override func viewDidAppear(_ animated: Bool) {
+        if pokemonSelected {
+            let loc = CLLocation(latitude: mapView.centerCoordinate.latitude, longitude: mapView.centerCoordinate.longitude)
+            createSighting(forLocation: loc, withPokemon: MasterSelection.sharedInstance.pokemonId)
+            pokemonSelected = false
+        }
         locationAuthStatus()
     }
     
@@ -143,12 +149,10 @@ class ViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDele
         
     }
     
-    
-    @IBAction func spotRandomPokemon(_ sender: UIButton) {
-        let loc = CLLocation(latitude: mapView.centerCoordinate.latitude, longitude: mapView.centerCoordinate.longitude)
-        
-        let rand = arc4random_uniform(151) + 1
-        createSighting(forLocation: loc, withPokemon: Int(rand))
+    @IBAction func spotSpecifiedPokemon(_ sender: UIButton) {
+        performSegue(withIdentifier: "PokemonSelectionVC", sender: nil)
+        pokemonSelected = true
     }
+    
 }
 
